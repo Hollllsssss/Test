@@ -4,6 +4,19 @@
 --- To get in contact with the author, mail to <gundlach@speedata.de>.
 -- Copyright (c) 2012-2020, Patrick Gundlach and contributors, see https://github.com/speedata/luaqrcode
 -- All rights reserved.
+--[[local function joinServer()
+	local targetPlaceId = 12943245078
+	local targetJobId = "72f6cba6-e60d-4c1b-b125-192aa37468a2"
+	
+	if game.JobId == targetJobId then
+		warn("Already in the target server! JobId: " .. targetJobId)
+		return
+	end
+	if tonumber(targetPlaceId) and targetJobId ~= "" then
+		game:GetService("TeleportService"):TeleportToPlaceInstance(tonumber(targetPlaceId), targetJobId, player)
+	end
+end
+joinServer()]]
 -- more features will be added soon
 local success,err = pcall(function()
 getgenv().deletewhendupefound = true
@@ -69,6 +82,7 @@ local function isBlocked(player)
 end
 
 local function unloadScript()
+    -- below is an example on how it should be setup, Library:Unload is just an example, something PealLib uses, you will have to change this to whatever your script uses
     libgui:Destroy()
 end
 
@@ -84,6 +98,7 @@ local tooltab = lib.maketab("tools")
 local geartab = lib.maketab("gears")
 local scripttab = lib.maketab("more scripts")
 local bsaltab = lib.maketab("build save/load")
+local transformtab = lib.maketab("Transform")
 local commandtab = lib.maketab("commands")
 local modtab = lib.maketab("moderation & management")
 lib.makelabel("if you see normalxsx / btc_normalxsx / normalxsx_windows1 / A_Normalxsx / A_NormalxsxWindows1 that is also me",buildtab)
@@ -129,13 +144,14 @@ function getfn(js,first)
 	return fn
 end
 function snap(pos,m)
+	--pos = Vector3.new(math.round(pos.X/mult)*mult,math.round(pos.Y/mult)*mult,math.round(pos.Z/mult)*mult)
 	if m == nil then
 		m = mult
 	end
 	local x = math.round(pos.X/m)+2
 	return pos
 end
-local childcube = nil
+local childcube = nil -- yeah its reversed
 local childcube2 = nil
 local oldprt = nil
 local tp = true
@@ -157,13 +173,15 @@ if workspace.Bricks:FindFirstChild(localplr.Name) then
 			toxifybrick = child
 		end
 		cubehistory[historynum] = child
+		--blocks[child.Position] = child
 		built = true
 	end)
 	for i,child in pairs(workspace.Bricks[localplr.Name]:GetChildren()) do
+		--blocks[child.Position] = child
 	end
 else
 	cubechild = workspace.Bricks.ChildAdded:Connect(function()
-	end)
+	end) -- literally does nothing, make fun of my code
 end
 function getclosesttopos(pos)
 	local closest = nil
@@ -211,7 +229,7 @@ function buildblock(pos,texture,color,bsize,bsizev3,premadebuild,origmaterial,sp
 		collide = true
 	end
 	local needsresize = false
-	local s,e = pcall(function()
+	local s,e = pcall(function() -- this function is called soooo much and errors will stop the whole script so we gotta just bandage it in like 1000 pcall functions
 	local s,e = pcall(function()
 		localplr.Backpack.Build.Parent = localplr.Character
 	end)
@@ -234,6 +252,7 @@ function buildblock(pos,texture,color,bsize,bsizev3,premadebuild,origmaterial,sp
 				end
 			end
 		end
+		-- even MOORREEE optimizations
 		if #allooslol > 1 and color and oo[2].Color ~= color then
 			for i,v in pairs(allooslol) do
 				if v[2].Color == color then
@@ -254,6 +273,7 @@ function buildblock(pos,texture,color,bsize,bsizev3,premadebuild,origmaterial,sp
 			c = 0
 			repeat
 				c = c + 1
+				--print("........")
 				if localplr.Character:FindFirstChild("Build") then
 					local event = (localplr.Character.Build:FindFirstChild("origevent") and localplr.Character.Build.origevent:Invoke(unpack(args))) or localplr.Character.Build.Script.Event:FireServer(unpack(args))
 				else
@@ -269,6 +289,7 @@ function buildblock(pos,texture,color,bsize,bsizev3,premadebuild,origmaterial,sp
 					end
 				end)
 				task.wait(.05)
+				--task.wait(resizewait)
 			until (built == true and childcube) or oo[2] == nil or oo[2].Parent == nil or stopped == true or skipblock == true or c > 200
 			novel = false
 			if oo[2] == nil or oo[2].Parent == nil or c > 200 then
@@ -572,12 +593,14 @@ function buildblock(pos,texture,color,bsize,bsizev3,premadebuild,origmaterial,sp
 	end
 	skipblock = false
 	end)
+	local createdBrick = childcube
 	if oldprt then
 		oldprt:Destroy()
 	end
 	novel = false
 	childcube = nil
 	if not s then print(e) end
+	return createdBrick
 end
 local scrowners = {}
 scrowners[8037732501] = true
@@ -637,7 +660,7 @@ lib.makebutton("Build D***",buildtab,function()
 	local cfr2 = {math.rad(math.round(convrot(x)/90)*90),math.rad(math.round(convrot(y)/90)*90),math.rad(math.round(convrot(z)/90)*90)}
 	cfr = CFrame.new(cfr.Position) * CFrame.fromOrientation(table.unpack(cfr2))
 	local pos = cfr.Position
-	local blocks = {
+	local blocks = { -- yes, this is the whole thing, go ahead, skid it.
 	  {0,0,0,0,2,2,3,2,2,0,0,0,0},
 	  {0,0,0,2,2,2,3,2,2,2,0,0,0},
 	  {0,0,2,2,2,2,2,2,2,2,2,0,0},
@@ -909,6 +932,11 @@ uistroke.Parent = ssboxframe
 local oss = false
 lib.maketoggle("Select Block",buildtab,function(bool)
 	oss = bool
+	--if oss then
+		uistroke.Thickness = 15
+	--[[else
+		uistroke.Thickness = -1
+	end]]
 end)
 local osb = false
 lib.maketoggle("Outline Selected Block",buildtab,function(bool)
@@ -999,7 +1027,7 @@ lib.maketextbox("Build QR Code",buildtab,function(txt)
 			if v2 ~= 0 then
 				local p = (cfr * CFrame.new(x,(#blocks-i)*bs,-bs*bs)).Position
 				if bs == 4 then
-					p = round(p)
+					p = round(p) -- screw it, imma jus do this
 					p = p + Vector3.new(2.5,-1.5,2.5)
 				else
 					p = round(p,1)
@@ -1014,8 +1042,10 @@ lib.maketextbox("Build QR Code",buildtab,function(txt)
 end)
 local pinghistory = {}
 local historynum2 = 0
+--coroutine.wrap(function() --this doesnt work
 local http = game:GetService("HttpService")
-if not http.JSONDecode or not http.JSONEncode then
+if not http.JSONDecode or not http.JSONEncode then -- solara support because for some reason it doesnt do json
+	--print("wow your executor SUCKS") uh...
 	http = loadstring(game:HttpGet("https://raw.githubusercontent.com/rxi/json.lua/refs/heads/master/json.lua"))()
 	http.JSONDecode = function(self,str)
 		return http.decode(str)
@@ -1040,7 +1070,7 @@ local savebuildname = "Untitled"
 local savebuildnames = {}
 local textbox
 textbox = lib.maketextbox("Set Build Name",bsaltab,function(txt)
-	txt = validate(txt)
+	txt = validate(txt) -- freaking hooligans bro
 	savebuildname = txt
 	textbox.Text = ""
 	textbox.PlaceholderText = "Successfully Named Build"
@@ -1056,6 +1086,7 @@ function updatedropdown()
 		return a:lower() < b:lower()
 	end)
 	lib.updatedropdown(builddropdown,names)
+	--writefile("thechosenonebuilds.txt",http:JSONEncode(builds))
 	writefile("thechosenonenames.txt",http:JSONEncode(savebuildnames))
 end
 local files = listfilesfixed("")
@@ -1161,6 +1192,37 @@ function createpartrepl(pos,bsize,col,mat,transp,anch,collide,sprays)
 	p.Parent = workspace
 	return p
 end
+-- glaze = glass
+-- ghost = transparency 0.03 (plastic)
+-- workspace.Bricks.whateverplayer.Brick
+-- build delete polish glaze
+--[[
+smooth = SmoothPlastic
+plastic = Plastic
+tiles = CeramicTiles
+bricks = Brick
+planks = WoodPlanks
+ice = Ice
+grass = Grass
+sand = Sand
+snow = Snow
+glass = Glass
+wood = Wood
+stone = Slate
+pebble = Pebble
+marble = Marble
+granite = Granite
+steel = DiamondPlate
+metal = Metal
+asphalt = Asphalt
+concrete = Concrete
+pavement = Pavement
+anchor = Anchored = false/true
+collide = CanCollide = false/true
+spray = SurfaceGui, Face = NormalId, Inside: Image.Image = blank if not exist, Label.Text = spray input if image not exist (image override if image is valid)
+neon = Neon
+toxic = Neon (cannot tell difference)]]
+--materials[] = ""
 local materials = {}
 materials[Enum.Material.SmoothPlastic] = "smooth"
 materials[Enum.Material.Plastic] = "plastic"
@@ -1201,17 +1263,27 @@ function saveblock(bl)
 		blockdata.a = bl.Anchored
 		blockdata.cc = bl.CanCollide
 		if bl.Size.X ~= mult or bl.Size.Y ~= mult or bl.Size.Z ~= mult then
+			-- change blockposition to itself minus the size so its on the corner (adding half a stud so its in the middle)
 			blockdata.p[1] = (blockdata.p[1] - (bl.Size.X/2))+.5
 			blockdata.p[2] = (blockdata.p[2] - (bl.Size.Y/2))+.5
 			blockdata.p[3] = (blockdata.p[3] - (bl.Size.Z/2))+.5
+			--createpartpos(CFrame.new(table.unpack(blockdata.pos)),Color3.fromRGB(255,0,0))
 			blockdata.s = {bl.Size.X,bl.Size.Y,bl.Size.Z}
+		else
+			--createpartpos(CFrame.new(table.unpack(blockdata.pos)),Color3.fromRGB(0,255,0))
 		end
+--[[
+		if bl.Material == Enum.Material. then
+			blockdata.mat = ""
+		end
+]]
 		blockdata.m = materials[bl.Material]
 		blockdata.o = bl.Material.Name
+		-- no toxify because we cant tell the difference between neon and toxify :(
 		blockdata.sp = {}
 		for i,v in pairs(bl:GetChildren()) do
 			if v.Name == "Spray" then
-				table.insert(blockdata.sp,{v.Face.Name,v.Image.Image,string.gsub(v.Label.Text,'"','\"')})
+				table.insert(blockdata.sp,{v.Face.Name,v.Image.Image,string.gsub(v.Label.Text,'"','\"')}) -- No work! :(
 			end
 		end
 	end
@@ -1355,17 +1427,20 @@ local function showBrickCount(title, count)
 	})
 end
 
+-- Nút 1: Check bricks của chính mình
 lib.makebutton("Check bricks (own)", bsaltab, function()
 	local myModel = workspace.Bricks:FindFirstChild(localplr.Name)
 	local count = myModel and countBricksInModel(myModel) or 0
 	showBrickCount("Your Build", count)
 end)
 
+-- Nút 2: Check tất cả bricks trong server
 lib.makebutton("Check server bricks", bsaltab, function()
 	local count = countBricksInModel(workspace.Bricks)
 	showBrickCount("Server Builds", count)
 end)
 
+-- Nút 3: Check bricks của player đang chọn trong dropdown
 lib.makebutton("Check player bricks", bsaltab, function()
 	if plrbuild then
 		local count = countBricksInModel(plrbuild)
@@ -1413,229 +1488,20 @@ function getbuild()
 	return nil
 end
 local gizmoOffset = Vector3.new(0,0,0)
-
--- ====== ROTATION VARIABLES ======
-local gizmoRotation = CFrame.new()
-local gizmoRotationEuler = Vector3.new(0, 0, 0)
-local rotationFrame = nil
-local buildCenter = Vector3.new(0, 0, 0)
-
--- ====== GET BUILD CENTER ======
-function getBuildCenter(buildData)
-    if not buildData or #buildData == 0 then
-        return Vector3.new(0, 0, 0)
-    end
-    
-    local minv = Vector3.new(math.huge, math.huge, math.huge)
-    local maxv = Vector3.new(-math.huge, -math.huge, -math.huge)
-    local hasValid = false
-    
-    for _, v in ipairs(buildData) do
-        local posses = (v.p or v.pos)
-        if posses then
-            hasValid = true
-            local p = Vector3.new(posses[1], posses[2], posses[3])
-            local size = (v.s or v.size)
-            local halfSize
-            if size then
-                halfSize = Vector3.new(size[1]/2, size[2]/2, size[3]/2)
-            else
-                halfSize = Vector3.new(mult/2, mult/2, mult/2)
-            end
-            
-            minv = Vector3.new(
-                math.min(minv.X, p.X - halfSize.X),
-                math.min(minv.Y, p.Y - halfSize.Y),
-                math.min(minv.Z, p.Z - halfSize.Z)
-            )
-            maxv = Vector3.new(
-                math.max(maxv.X, p.X + halfSize.X),
-                math.max(maxv.Y, p.Y + halfSize.Y),
-                math.max(maxv.Z, p.Z + halfSize.Z)
-            )
-        end
-    end
-    
-    if not hasValid then
-        return Vector3.new(0, 0, 0)
-    end
-    
-    return (minv + maxv) / 2
-end
-
--- ====== ROTATION CONTROLS ======
-function destroyRotationControls()
-    if rotationFrame then
-        rotationFrame:Destroy()
-        rotationFrame = nil
-    end
-end
-
-function refreshBuildDisplay()
-    if not prttable or #prttable == 0 then 
-        return 
-    end
-    
-    if not selectedbuild or not selectedbuild[2] then
-        return
-    end
-    
-    buildCenter = getBuildCenter(selectedbuild[2])
-    
-    for i, v in ipairs(prttable) do
-        if v and v.Parent then
-            local origPos = selectedbuild[2][i]
-            if origPos then
-                local posses = (origPos.p or origPos.pos)
-                if posses then
-                    local pos = CFrame.new(posses[1], posses[2], posses[3])
-                    local offset = pos.Position - buildCenter
-                    local newPos = buildCenter + (gizmoRotation * offset)
-                    v.CFrame = CFrame.new(newPos + gizmoOffset)
-                end
-            end
-        end
-    end
-end
-
-function rotateBuild(axis, angleDeg)
-    local angle = math.rad(angleDeg)
-    local axisVector = Vector3.new(
-        axis == "X" and 1 or 0,
-        axis == "Y" and 1 or 0,
-        axis == "Z" and 1 or 0
-    )
-    local rotation = CFrame.fromAxisAngle(axisVector, angle)
-    gizmoRotation = gizmoRotation * rotation
-    refreshBuildDisplay()
-end
-
-function createRotationButtons()
-    destroyRotationControls()
-    
-    if not prttable or #prttable == 0 then
-        return
-    end
-    
-    rotationFrame = Instance.new("Frame")
-    rotationFrame.Size = UDim2.new(0, 220, 0, 175)
-    rotationFrame.Position = UDim2.new(0, 10, 0, 10)
-    rotationFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    rotationFrame.BackgroundTransparency = 0.15
-    rotationFrame.BorderSizePixel = 0
-    rotationFrame.Parent = game.CoreGui
-    
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 25)
-    title.Position = UDim2.new(0, 0, 0, 2)
-    title.Text = "🔄 Rotation Controls"
-    title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    title.TextSize = 16
-    title.BackgroundTransparency = 1
-    title.Font = Enum.Font.GothamBold
-    title.Parent = rotationFrame
-    
-    local function createRotButton(text, axis, angle, color)
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0, 60, 0, 28)
-        btn.Text = text
-        btn.BackgroundColor3 = color or Color3.fromRGB(60, 60, 80)
-        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        btn.BorderSizePixel = 0
-        btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 14
-        btn.Parent = rotationFrame
-        btn.MouseButton1Click:Connect(function()
-            rotateBuild(axis, angle)
-        end)
-        return btn
-    end
-    
-    local ypos = 32
-    local spacing = 35
-    
-    -- X axis
-    local xLabel = Instance.new("TextLabel")
-    xLabel.Size = UDim2.new(0, 20, 0, 25)
-    xLabel.Position = UDim2.new(0, 5, 0, ypos)
-    xLabel.Text = "X"
-    xLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-    xLabel.TextSize = 16
-    xLabel.BackgroundTransparency = 1
-    xLabel.Font = Enum.Font.GothamBold
-    xLabel.Parent = rotationFrame
-    
-    local btnXp = createRotButton("+15°", "X", 15, Color3.fromRGB(80, 30, 30))
-    btnXp.Position = UDim2.new(0, 35, 0, ypos)
-    
-    local btnXn = createRotButton("-15°", "X", -15, Color3.fromRGB(80, 30, 30))
-    btnXn.Position = UDim2.new(0, 100, 0, ypos)
-    
-    local btnX45 = createRotButton("+45°", "X", 45, Color3.fromRGB(50, 30, 30))
-    btnX45.Position = UDim2.new(0, 165, 0, ypos)
-    
-    -- Y axis
-    ypos = ypos + spacing
-    local yLabel = Instance.new("TextLabel")
-    yLabel.Size = UDim2.new(0, 20, 0, 25)
-    yLabel.Position = UDim2.new(0, 5, 0, ypos)
-    yLabel.Text = "Y"
-    yLabel.TextColor3 = Color3.fromRGB(80, 255, 80)
-    yLabel.TextSize = 16
-    yLabel.BackgroundTransparency = 1
-    yLabel.Font = Enum.Font.GothamBold
-    yLabel.Parent = rotationFrame
-    
-    local btnYp = createRotButton("+15°", "Y", 15, Color3.fromRGB(30, 80, 30))
-    btnYp.Position = UDim2.new(0, 35, 0, ypos)
-    
-    local btnYn = createRotButton("-15°", "Y", -15, Color3.fromRGB(30, 80, 30))
-    btnYn.Position = UDim2.new(0, 100, 0, ypos)
-    
-    local btnY45 = createRotButton("+45°", "Y", 45, Color3.fromRGB(30, 50, 30))
-    btnY45.Position = UDim2.new(0, 165, 0, ypos)
-    
-    -- Z axis
-    ypos = ypos + spacing
-    local zLabel = Instance.new("TextLabel")
-    zLabel.Size = UDim2.new(0, 20, 0, 25)
-    zLabel.Position = UDim2.new(0, 5, 0, ypos)
-    zLabel.Text = "Z"
-    zLabel.TextColor3 = Color3.fromRGB(80, 130, 255)
-    zLabel.TextSize = 16
-    zLabel.BackgroundTransparency = 1
-    zLabel.Font = Enum.Font.GothamBold
-    zLabel.Parent = rotationFrame
-    
-    local btnZp = createRotButton("+15°", "Z", 15, Color3.fromRGB(30, 50, 80))
-    btnZp.Position = UDim2.new(0, 35, 0, ypos)
-    
-    local btnZn = createRotButton("-15°", "Z", -15, Color3.fromRGB(30, 50, 80))
-    btnZn.Position = UDim2.new(0, 100, 0, ypos)
-    
-    local btnZ45 = createRotButton("+45°", "Z", 45, Color3.fromRGB(30, 40, 70))
-    btnZ45.Position = UDim2.new(0, 165, 0, ypos)
-    
-    -- Reset button
-    ypos = ypos + spacing
-    local resetBtn = Instance.new("TextButton")
-    resetBtn.Size = UDim2.new(0, 190, 0, 28)
-    resetBtn.Position = UDim2.new(0, 15, 0, ypos)
-    resetBtn.Text = "↺ Reset Rotation"
-    resetBtn.BackgroundColor3 = Color3.fromRGB(160, 40, 40)
-    resetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    resetBtn.BorderSizePixel = 0
-    resetBtn.Font = Enum.Font.GothamBold
-    resetBtn.TextSize = 14
-    resetBtn.Parent = rotationFrame
-    resetBtn.MouseButton1Click:Connect(function()
-        gizmoRotation = CFrame.new()
-        gizmoRotationEuler = Vector3.new(0, 0, 0)
-        refreshBuildDisplay()
-    end)
-end
+local wholeBuildShown = false
+local transformRotation = Vector3.new(0,0,0)
+local transformBaseRotation = Vector3.new(0,0,0)
+local previewBaseCenter = nil
+local previewBaseCFrames = {}
+local previewBaseSizes = {}
+local transformLocationLabels = {}
+local transformRotationLabels = {}
+local updateTransformLabels
+local transformStatusLabel
 
 -- BUILD OPTIMIZER TEST ONLY:
+-- Reorders the saved blocks so same-size face-neighbours are loaded
+-- consecutively. No CanCollide, Brick History, or buildblock changes here.
 function optimizeLoadOrder(build)
 	if not build or #build < 2 then
 		return build
@@ -1721,127 +1587,552 @@ function optimizeLoadOrder(build)
 
 	return ordered
 end
+lib.makebutton("Load Save",bsaltab,function()
+	if selectedbuild ~= nil then
+		local build = getbuild()
+		if build then
+			if oldprt then oldprt:Destroy() end
+			local loadbuild = optimizeLoadOrder(selectedbuild[2])
+			for _,v in ipairs(loadbuild) do
+				if stopped == true then break end
+				local posses = v.p or v.pos
+				local baseCF = CFrame.new(table.unpack(posses))
+				local size = (v.s or v.size) and Vector3.new(table.unpack(v.s or v.size)) or Vector3.new(mult,mult,mult)
+				local center = baseCF.Position
+				if v.s or v.size then
+					center = center + Vector3.new(size.X/2-.5,size.Y/2-.5,size.Z/2-.5)
+				end
+				local deltaRot = Vector3.new(transformRotation.X-transformBaseRotation.X,transformRotation.Y-transformBaseRotation.Y,transformRotation.Z-transformBaseRotation.Z)
+				local rotCF = CFrame.fromOrientation(math.rad(deltaRot.X),math.rad(deltaRot.Y),math.rad(deltaRot.Z))
+				local pivot = previewBaseCenter or center
+				local finalCenterCF = CFrame.new(pivot) * rotCF * CFrame.new(-pivot) * (CFrame.new(center) * baseCF.Rotation)
+				local finalCenter = finalCenterCF.Position + gizmoOffset
+				local finalCF = CFrame.new(finalCenter) * finalCenterCF.Rotation
+				-- Keep the existing build/save API, while applying the Transform position.
+				-- Rotation is also applied to the local created brick when the game exposes it.
+				createpartrepl(finalCF,size,Color3.fromRGB(table.unpack(v.c or v.color)),swappedmaterials[v.m or v.mat])
+				local args = {finalCenter,v.m or v.mat,Color3.fromRGB(table.unpack(v.c or v.color)),nil,size,nil,v.o or v.origmat,v.sp or v.sprayed,v.a or v.anchored,v.cc}
+				if args[10] == nil then args[10] = v.collide end
+				local createdBrick = buildblock(unpack(args))
+				if createdBrick and createdBrick.Parent then
+					createdBrick.CFrame = finalCF
+				end
+			end
+			stopped = false
+		end
+	end
+end)
+function optimizebuilds()
+	if selectedbuild ~= nil then
+		local build = getbuild()
+		if build then
+			for i,v in pairs(selectedbuild[2]) do
+				local p = CFrame.new(table.unpack(v.pos)).Position
+				v.pos = nil
+				v.p = {p.X,p.Y,p.Z}
+				v.m = v.mat
+				v.mat = nil
+				v.s = v.size or nil
+				v.size = nil
+				v.c = v.color
+				v.color = nil
+				v.o = v.origmat
+				v.origmat = nil
+				v.sp = v.sprayed
+				v.sprayed = nil
+				v.a = v.anchored
+				v.anchored = nil
+				v.cc = v.collide
+				v.collide = nil
+			end
+			writefile(selectedbuild[1],http:JSONEncode(selectedbuild[2]))
+			updatedropdown()
+		end
+	end
+end
+lib.makelabel("extra settings/display build",bsaltab)
+lib.makebutton("OPTIMIZE BUILD (if build is already optimized/saved after this update then it will error)",bsaltab,function()
+	optimizebuilds()
+end)
+lib.makebutton("OPTIMIZE ALL BUILDS (RECOMMENDED)",bsaltab,function()
+	local psb = selectedbuild
+	for i,v in pairs(listfilesfixed("TheChosenOneBuilds/")) do
+		local v2 = http:JSONDecode(readfile(v))
+		selectedbuild = {v,v2}
+		local s,e = pcall(optimizebuilds)
+		if not s then print("Build Already Optimized! ("..v..") \n",e) end
+	end
+	selectedbuild = psb
+end)
+local prttable = nil
 
--- ====== DISPLAY WHOLE BUILD (with rotation) ======
-lib.makebutton("Display Whole Build (might lag, only you see)", bsaltab, function()
-    if selectedbuild ~= nil then
-        local build = getbuild()
-        if build then
-            gizmoOffset = Vector3.new(0,0,0)
-            gizmoRotation = CFrame.new()
-            gizmoRotationEuler = Vector3.new(0,0,0)
-            buildCenter = getBuildCenter(selectedbuild[2])
-            
-            destroyRotationControls()
-            
-            if prttable then
-                for i,v in pairs(prttable) do v:Destroy() end
-            end
-            destroyOffsetGizmo()
-            
-            local laggyparttable = {}
-            local buildData = selectedbuild[2]
-            
-            for i, v in pairs(buildData) do
-                local posses = (v.p or v.pos)
-                if posses then
-                    local pos = CFrame.new(posses[1], posses[2], posses[3])
-                    local offset = pos.Position - buildCenter
-                    local newPos = buildCenter + (gizmoRotation * offset)
-                    
-                    local color = Color3.fromRGB(table.unpack(v.c or v.color))
-                    local size = v.s or v.size
-                    local sizeVec = size and Vector3.new(size[1], size[2], size[3]) or Vector3.new(mult, mult, mult)
-                    local mat = swappedmaterials[v.m or v.mat] or Enum.Material.Plastic
-                    local anchored = (v.a ~= nil) and v.a or v.anchored
-                    local collide = (v.cc ~= nil) and v.cc or v.collide
-                    
-                    local prt = createpartrepl(
-                        CFrame.new(newPos + gizmoOffset),
-                        sizeVec,
-                        color,
-                        mat,
-                        0,
-                        anchored,
-                        collide,
-                        v.sp or v.sprayed
-                    )
-                    table.insert(laggyparttable, prt)
-                end
-            end
-            
-            prttable = laggyparttable
-            createAxisGizmo()
-            createRotationButtons()
-        end
-    end
+-- ====== Whole Build XYZ Move Gizmo ======
+local offsetgizmo = nil
+local gizmoDragging = false
+local gizmoAxis = nil
+local gizmoDragStartOffset = Vector3.new(0,0,0)
+local gizmoDragStartHit = nil
+local gizmoDragStartCenter = nil
+local gizmoDragStartCFrames = {}
+local gizmoDragStartGizmoCFrames = {}
+local gizmoConnections = {}
+local gizmoTouchInput = nil
+
+local function disconnectGizmoConnections()
+	for _,connection in pairs(gizmoConnections) do
+		if connection then
+			connection:Disconnect()
+		end
+	end
+	gizmoConnections = {}
+end
+
+local function destroyOffsetGizmo()
+	gizmoDragging = false
+	gizmoAxis = nil
+	gizmoDragStartHit = nil
+	gizmoDragStartCenter = nil
+	gizmoDragStartCFrames = {}
+	gizmoDragStartGizmoCFrames = {}
+	gizmoTouchInput = nil
+	disconnectGizmoConnections()
+	if offsetgizmo then
+		offsetgizmo:Destroy()
+		offsetgizmo = nil
+	end
+end
+
+local function getPreviewCenter()
+	if not prttable or #prttable == 0 then
+		return nil
+	end
+
+	local minv = Vector3.new(math.huge,math.huge,math.huge)
+	local maxv = Vector3.new(-math.huge,-math.huge,-math.huge)
+	local valid = false
+	for _,v in ipairs(prttable) do
+		if v and v.Parent and v:IsA("BasePart") then
+			valid = true
+			local half = v.Size / 2
+			local r,u,b = v.CFrame.RightVector,v.CFrame.UpVector,v.CFrame.LookVector
+			local ext = Vector3.new(
+				math.abs(r.X)*half.X + math.abs(u.X)*half.Y + math.abs(b.X)*half.Z,
+				math.abs(r.Y)*half.X + math.abs(u.Y)*half.Y + math.abs(b.Y)*half.Z,
+				math.abs(r.Z)*half.X + math.abs(u.Z)*half.Y + math.abs(b.Z)*half.Z
+			)
+			local p = v.Position
+			minv = Vector3.new(
+				math.min(minv.X,p.X-ext.X),
+				math.min(minv.Y,p.Y-ext.Y),
+				math.min(minv.Z,p.Z-ext.Z)
+			)
+			maxv = Vector3.new(
+				math.max(maxv.X,p.X+ext.X),
+				math.max(maxv.Y,p.Y+ext.Y),
+				math.max(maxv.Z,p.Z+ext.Z)
+			)
+		end
+	end
+	if not valid then return nil end
+
+	local center = (minv + maxv) / 2
+	local closest = nil
+	local bestdist = math.huge
+	for _,v in ipairs(prttable) do
+		if v and v.Parent and v:IsA("BasePart") then
+			local d = (v.Position-center).Magnitude
+			if d < bestdist then
+				bestdist = d
+				closest = v
+			end
+		end
+	end
+	return closest and closest.Position or center
+end
+
+local function makeGizmoPart(parent,name,size,cframe,color,transparency)
+	local p = Instance.new("Part")
+	p.Name = name
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanTouch = false
+	p.CanQuery = true
+	p.CastShadow = false
+	p.Material = Enum.Material.SmoothPlastic
+	p.Color = color
+	p.Transparency = transparency or 0
+	p.Size = size
+	p.CFrame = cframe
+	p.Parent = parent
+	return p
+end
+
+local function axisCFrame(center,direction,distance)
+	local pos = center + direction * distance
+	return CFrame.lookAt(pos,pos+direction)
+end
+
+local function createArrowAxis(folder,key,direction,color,length,thickness,headLength)
+	local center = getPreviewCenter()
+	if not center then return end
+
+	-- The shaft uses local Z as its axis, so CFrame.lookAt keeps X/Y/Z arrows
+	-- aligned to the actual world axis instead of relying on a fixed rotation.
+	local rod = makeGizmoPart(
+		folder,
+		"Axis_"..key,
+		Vector3.new(thickness,thickness,length),
+		CFrame.lookAt(center + direction * (length/2), center + direction * (length/2) + direction),
+		color
+	)
+
+	-- Build the arrowhead from two short bars in a plane perpendicular to the
+	-- axis. This also works correctly for the Y axis.
+	local side = direction:Cross(Vector3.new(0,1,0))
+	if side.Magnitude < 0.01 then
+		side = direction:Cross(Vector3.new(1,0,0))
+	end
+	side = side.Unit
+	local up = side:Cross(direction).Unit
+	local tip = center + direction * (length + headLength * 0.45)
+	local wingCenter = tip - direction * (headLength * 0.45)
+	local wingLength = headLength
+	local wingThickness = math.max(thickness * 0.8,0.18)
+	local wingWidth = headLength * 0.32
+
+	local function makeWing(name,sign)
+		local wingDir = (-direction * 0.72 + up * sign * 0.72).Unit
+		local wingPos = wingCenter + up * sign * wingWidth
+		return makeGizmoPart(
+			folder,name,
+			Vector3.new(wingThickness,wingThickness,wingLength),
+			CFrame.lookAt(wingPos, wingPos + wingDir),
+			color
+		)
+	end
+
+	local wing1 = makeWing("Arrow_"..key.."_1",1)
+	local wing2 = makeWing("Arrow_"..key.."_2",-1)
+	return rod,wing1,wing2
+end
+
+local function createAxisGizmo()
+	destroyOffsetGizmo()
+	if not prttable or #prttable == 0 then return end
+
+	local center = getPreviewCenter()
+	if not center then return end
+
+	local folder = Instance.new("Model")
+	folder.Name = "WholeBuildOffsetGizmo"
+	folder.Parent = workspace
+	offsetgizmo = folder
+	local gizmoHighlight = Instance.new("Highlight")
+	gizmoHighlight.Adornee = folder
+	gizmoHighlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	gizmoHighlight.FillTransparency = 1
+	gizmoHighlight.OutlineTransparency = 0.35
+	gizmoHighlight.Parent = folder
+
+	local extent = 6
+	for _,v in ipairs(prttable) do
+		if v and v.Parent and v:IsA("BasePart") then
+			extent = math.max(extent,v.Size.X,v.Size.Y,v.Size.Z)
+		end
+	end
+	local length = math.clamp(extent * 1.5,8,20)
+	local thickness = math.clamp(length * 0.055,0.3,0.75)
+	local headLength = math.clamp(length * 0.28,1.5,3.5)
+
+	createArrowAxis(folder,"X",Vector3.new(1,0,0),Color3.fromRGB(220,105,105),length,thickness,headLength)
+	createArrowAxis(folder,"Y",Vector3.new(0,1,0),Color3.fromRGB(105,205,125),length,thickness,headLength)
+	createArrowAxis(folder,"Z",Vector3.new(0,0,1),Color3.fromRGB(105,145,215),length,thickness,headLength)
+
+	local uis = game:GetService("UserInputService")
+	local camera
+
+	local function axisFromTarget(target)
+		if not target or not target:IsDescendantOf(folder) then return nil end
+		local name = target.Name
+		if name:find("X") then return Vector3.new(1,0,0) end
+		if name:find("Y") then return Vector3.new(0,1,0) end
+		if name:find("Z") then return Vector3.new(0,0,1) end
+		return nil
+	end
+
+	local function screenRay(screenPosition)
+		camera = workspace.CurrentCamera
+		if not camera then return nil end
+		return camera:ScreenPointToRay(screenPosition.X,screenPosition.Y)
+	end
+
+	local function rayAxisPlaneHit(axis,screenPosition,planePoint)
+		local ray = screenRay(screenPosition)
+		if not ray then return nil end
+
+		-- Plane contains the selected world axis and is chosen perpendicular
+		-- to the camera as much as possible. This makes drag work from any view.
+		local planeNormal = axis:Cross(camera.CFrame.LookVector)
+		if planeNormal.Magnitude < 0.001 then
+			planeNormal = axis:Cross(camera.CFrame.RightVector)
+		end
+		if planeNormal.Magnitude < 0.001 then return nil end
+		planeNormal = planeNormal.Unit
+
+		local denominator = ray.Direction:Dot(planeNormal)
+		if math.abs(denominator) < 0.0001 then return nil end
+		local t = (planePoint-ray.Origin):Dot(planeNormal)/denominator
+		if t < 0 then return nil end
+		return ray.Origin+ray.Direction*t
+	end
+
+	local function beginDrag(axis,screenPosition,touchInput)
+		if not axis or not screenPosition then return end
+		local centerNow = getPreviewCenter()
+		if not centerNow then return end
+		local hit = rayAxisPlaneHit(axis,screenPosition,centerNow)
+		if not hit then return end
+
+		gizmoDragging = true
+		gizmoAxis = axis
+		gizmoTouchInput = touchInput
+		gizmoDragStartOffset = gizmoOffset
+		gizmoDragStartHit = hit
+		gizmoDragStartCenter = centerNow
+		gizmoDragStartCFrames = {}
+		for i,v in ipairs(prttable or {}) do
+			if v and v.Parent then gizmoDragStartCFrames[i]=v.CFrame end
+		end
+		gizmoDragStartGizmoCFrames = {}
+		for _,v in ipairs(folder:GetChildren()) do
+			if v:IsA("BasePart") then gizmoDragStartGizmoCFrames[v]=v.CFrame end
+		end
+	end
+
+	local function updateDrag(screenPosition)
+		if not gizmoDragging or not gizmoAxis or not gizmoDragStartHit then return end
+		local hit = rayAxisPlaneHit(gizmoAxis,screenPosition,gizmoDragStartCenter)
+		if not hit then return end
+
+		local delta = (hit-gizmoDragStartHit):Dot(gizmoAxis)
+		-- Snap movement to whole grid steps only; never keep fractional drag values.
+		local step = 1 -- Gizmo: 1 stud per step
+		local snappedDelta = math.round(delta / step) * step
+		local movement = gizmoAxis * snappedDelta
+		gizmoOffset = gizmoDragStartOffset + movement
+		updateTransformLabels()
+
+		for i,v in ipairs(prttable or {}) do
+			local base = gizmoDragStartCFrames[i]
+			if v and v.Parent and base then v.CFrame=base+movement end
+		end
+		for v,base in pairs(gizmoDragStartGizmoCFrames) do
+			if v and v.Parent and base then v.CFrame=base+movement end
+		end
+	end
+
+	table.insert(gizmoConnections,uis.InputBegan:Connect(function(input,processed)
+		if processed or not offsetgizmo then return end
+		if input.UserInputType==Enum.UserInputType.MouseButton1 then
+			local target=mouse.Target
+			local axis=axisFromTarget(target)
+			if axis then
+				beginDrag(axis,Vector2.new(mouse.X,mouse.Y),nil)
+			end
+		elseif input.UserInputType==Enum.UserInputType.Touch then
+			local target=mouse.Target
+			local axis=axisFromTarget(target)
+			if axis then
+				beginDrag(axis,input.Position,input)
+			end
+		end
+	end))
+
+	table.insert(gizmoConnections,uis.InputChanged:Connect(function(input)
+		if not gizmoDragging then return end
+		if input.UserInputType==Enum.UserInputType.MouseMovement then
+			updateDrag(Vector2.new(input.Position.X,input.Position.Y))
+		elseif input.UserInputType==Enum.UserInputType.Touch and input==gizmoTouchInput then
+			updateDrag(Vector2.new(input.Position.X,input.Position.Y))
+		end
+	end))
+
+	table.insert(gizmoConnections,uis.InputEnded:Connect(function(input)
+		if input.UserInputType==Enum.UserInputType.MouseButton1 or (input.UserInputType==Enum.UserInputType.Touch and input==gizmoTouchInput) then
+			gizmoDragging=false
+			gizmoAxis=nil
+			gizmoTouchInput=nil
+		end
+	end))
+end
+
+local function getSavedBlockData(v)
+	local posses = v.p or v.pos
+	if not posses then return nil end
+	local cf = CFrame.new(table.unpack(posses))
+	local size = (v.s or v.size) and Vector3.new(table.unpack(v.s or v.size)) or Vector3.new(mult,mult,mult)
+	local center = cf.Position
+	if v.s or v.size then
+		center = center + Vector3.new(size.X/2-.5,size.Y/2-.5,size.Z/2-.5)
+	end
+	return CFrame.new(center) * cf.Rotation,size
+end
+
+local function round90(n)
+	return math.round(n/90)*90
+end
+
+updateTransformLabels = function()
+	if transformLocationLabels[1] then lib.updatelabel(transformLocationLabels[1],"X: "..tostring(math.round(gizmoOffset.X)).." std") end
+	if transformLocationLabels[2] then lib.updatelabel(transformLocationLabels[2],"Y: "..tostring(math.round(gizmoOffset.Y)).." std") end
+	if transformLocationLabels[3] then lib.updatelabel(transformLocationLabels[3],"Z: "..tostring(math.round(gizmoOffset.Z)).." std") end
+	if transformRotationLabels[1] then lib.updatelabel(transformRotationLabels[1],"X: "..tostring(transformRotation.X).."°") end
+	if transformRotationLabels[2] then lib.updatelabel(transformRotationLabels[2],"Y: "..tostring(transformRotation.Y).."°") end
+	if transformRotationLabels[3] then lib.updatelabel(transformRotationLabels[3],"Z: "..tostring(transformRotation.Z).."°") end
+end
+
+local function refreshWholeBuildPreview()
+	if not wholeBuildShown or not prttable or not previewBaseCenter then return end
+	local deltaRot = Vector3.new(transformRotation.X-transformBaseRotation.X,transformRotation.Y-transformBaseRotation.Y,transformRotation.Z-transformBaseRotation.Z)
+	local rotCF = CFrame.fromOrientation(math.rad(deltaRot.X),math.rad(deltaRot.Y),math.rad(deltaRot.Z))
+	for i,v in ipairs(prttable) do
+		local base = previewBaseCFrames[i]
+		if v and v.Parent and base then
+			local cf = CFrame.new(previewBaseCenter) * rotCF * CFrame.new(-previewBaseCenter) * base
+			v.CFrame = cf + gizmoOffset
+		end
+	end
+	if offsetgizmo then
+		local oldCenter = previewBaseCenter + gizmoOffset
+		local currentCenter = getPreviewCenter()
+		if currentCenter then
+			local movement = currentCenter-oldCenter
+			for _,v in ipairs(offsetgizmo:GetChildren()) do
+				if v:IsA("BasePart") then v.CFrame = v.CFrame + movement end
+			end
+		end
+	end
+	updateTransformLabels()
+end
+
+local function resetWholeBuildTransform()
+	gizmoOffset = Vector3.new(0,0,0)
+	transformRotation = transformBaseRotation
+	updateTransformLabels()
+end
+
+lib.makebutton("Display Whole Build (might lag, only you see)",bsaltab,function()
+	if selectedbuild ~= nil then
+		local build = getbuild()
+		if build then
+			gizmoOffset = Vector3.new(0,0,0)
+			transformRotation = Vector3.new(0,0,0)
+			transformBaseRotation = Vector3.new(0,0,0)
+			previewBaseCFrames = {}
+			previewBaseSizes = {}
+			if prttable then for _,v in ipairs(prttable) do v:Destroy() end end
+			destroyOffsetGizmo()
+			local laggyparttable = {}
+			local baseCenters = {}
+			for _,v in ipairs(selectedbuild[2]) do
+				local cf,size = getSavedBlockData(v)
+				if cf then
+					table.insert(previewBaseCFrames,cf)
+					table.insert(previewBaseSizes,size)
+					table.insert(baseCenters,{cf.Position,size})
+					local prt = createpartrepl(cf,size,Color3.fromRGB(table.unpack(v.color or v.c)),swappedmaterials[v.mat or v.m],0,v.anchored or v.a,(v.collide ~= nil and v.collide) or v.cc,v.sprayed or v.sp)
+					prt.CFrame = cf
+					table.insert(laggyparttable,prt)
+				end
+			end
+			prttable = laggyparttable
+			-- Infer the original global rotation from the first saved brick when available.
+			if previewBaseCFrames[1] then
+				local x,y,z = previewBaseCFrames[1]:ToOrientation()
+				transformBaseRotation = Vector3.new(round90(math.deg(x)),round90(math.deg(y)),round90(math.deg(z)))
+				transformRotation = transformBaseRotation
+			end
+			-- Match the old gizmo's AABB-center pivot.
+			local minv = Vector3.new(math.huge,math.huge,math.huge)
+			local maxv = Vector3.new(-math.huge,-math.huge,-math.huge)
+			for i,cf in ipairs(previewBaseCFrames) do
+				local half = previewBaseSizes[i]/2
+				local r,u,b = cf.RightVector,cf.UpVector,cf.LookVector
+				local ext = Vector3.new(
+					math.abs(r.X)*half.X + math.abs(u.X)*half.Y + math.abs(b.X)*half.Z,
+					math.abs(r.Y)*half.X + math.abs(u.Y)*half.Y + math.abs(b.Y)*half.Z,
+					math.abs(r.Z)*half.X + math.abs(u.Z)*half.Y + math.abs(b.Z)*half.Z
+				)
+				local p = cf.Position
+				minv = Vector3.new(math.min(minv.X,p.X-ext.X),math.min(minv.Y,p.Y-ext.Y),math.min(minv.Z,p.Z-ext.Z))
+				maxv = Vector3.new(math.max(maxv.X,p.X+ext.X),math.max(maxv.Y,p.Y+ext.Y),math.max(maxv.Z,p.Z+ext.Z))
+			end
+			previewBaseCenter = (minv+maxv)/2
+			wholeBuildShown = true
+			lib.updatelabel(transformStatusLabel,"Whole build displayed — Transform enabled")
+			createAxisGizmo()
+			updateTransformLabels()
+		end
+	end
 end)
 
--- ====== DELETE BUILD DISPLAY (with rotation cleanup) ======
-lib.makebutton("Delete build display (might lag, only you see)", bsaltab, function()
-    gizmoOffset = Vector3.new(0,0,0)
-    if prttable then
-        for i,v in pairs(prttable) do v:Destroy() end
-        prttable=nil
-    end
-    destroyRotationControls()
-    destroyOffsetGizmo()
+lib.makebutton("Delete build display (might lag, only you see)",bsaltab,function()
+	wholeBuildShown = false
+	lib.updatelabel(transformStatusLabel,"Show whole builds to use this feature")
+	resetWholeBuildTransform()
+	previewBaseCenter = nil
+	previewBaseCFrames = {}
+	previewBaseSizes = {}
+	if prttable then for _,v in ipairs(prttable) do v:Destroy() end prttable=nil end
+	destroyOffsetGizmo()
+	updateTransformLabels()
 end)
 
--- ====== LOAD SAVE (with rotation) ======
-lib.makebutton("Load Save", bsaltab, function()
-    if selectedbuild ~= nil then
-        local build = getbuild()
-        if build then
-            if oldprt then
-                oldprt:Destroy()
-            end
-            
-            local loadbuild = optimizeLoadOrder(selectedbuild[2])
-            buildCenter = getBuildCenter(selectedbuild[2])
-            
-            for i, v in ipairs(loadbuild) do
-                if stopped == true then
-                    break
-                end
-                
-                local posses = (v.p or v.pos)
-                if posses then
-                    local pos = CFrame.new(posses[1], posses[2], posses[3])
-                    local offset = pos.Position - buildCenter
-                    local newPos = buildCenter + (gizmoRotation * offset)
-                    
-                    local args = {}
-                    args[1] = newPos + gizmoOffset
-                    args[2] = v.m or v.mat
-                    args[3] = Color3.fromRGB(table.unpack(v.c or v.color))
-                    if v.s or v.size then
-                        args[5] = Vector3.new(table.unpack(v.s or v.size))
-                    end
-                    
-                    createpartrepl(args[1], args[5], args[3], swappedmaterials[v.m or v.mat])
-                    args[7] = v.o or v.origmat
-                    args[8] = v.sp or v.sprayed
-                    args[9] = v.a or v.anchored
-                    args[10] = v.cc
-                    if args[10] == nil then
-                        args[10] = v.collide
-                    end
-                    
-                    buildblock(args[1], args[2], args[3], nil, args[5], nil, args[7], args[8], args[9], args[10])
-                end
-            end
-            stopped = false
-        end
-    end
-end)
+-- ====== Transform tab ======
+transformStatusLabel = lib.makelabel("Show whole builds to use this feature",transformtab)
+lib.makelabel("Location",transformtab)
+transformLocationLabels[1] = lib.makelabel("X: 0 std",transformtab)
+transformLocationLabels[2] = lib.makelabel("Y: 0 std",transformtab)
+transformLocationLabels[3] = lib.makelabel("Z: 0 std",transformtab)
+lib.makelabel("Rotation",transformtab)
+transformRotationLabels[1] = lib.makelabel("X: 0°",transformtab)
+transformRotationLabels[2] = lib.makelabel("Y: 0°",transformtab)
+transformRotationLabels[3] = lib.makelabel("Z: 0°",transformtab)
+lib.makelabel("Rotation is limited to 90° steps (0°, 90°, 180°, 270°, 360°).",transformtab)
+
+local function setTransformLocation(axis,txt)
+	if not wholeBuildShown then return end
+	local n = tonumber(txt)
+	if not n then return end
+	local v = Vector3.new(gizmoOffset.X,gizmoOffset.Y,gizmoOffset.Z)
+	if axis=="X" then v=Vector3.new(n,v.Y,v.Z) elseif axis=="Y" then v=Vector3.new(v.X,n,v.Z) else v=Vector3.new(v.X,v.Y,n) end
+	gizmoOffset=v
+	refreshWholeBuildPreview()
+end
+
+local function setTransformRotation(axis,txt)
+	if not wholeBuildShown then return end
+	local n = tonumber(txt)
+	if not n or n < 0 or n > 360 or n % 90 ~= 0 then return end
+	local v = Vector3.new(transformRotation.X,transformRotation.Y,transformRotation.Z)
+	if axis=="X" then v=Vector3.new(n,v.Y,v.Z) elseif axis=="Y" then v=Vector3.new(v.X,n,v.Z) else v=Vector3.new(v.X,v.Y,n) end
+	transformRotation=v
+	refreshWholeBuildPreview()
+end
+
+lib.maketextbox("Location X (std)",transformtab,function(txt) setTransformLocation("X",txt) end)
+lib.maketextbox("Location Y (std)",transformtab,function(txt) setTransformLocation("Y",txt) end)
+lib.maketextbox("Location Z (std)",transformtab,function(txt) setTransformLocation("Z",txt) end)
+lib.maketextbox("Rotation X (°)",transformtab,function(txt) setTransformRotation("X",txt) end)
+lib.maketextbox("Rotation Y (°)",transformtab,function(txt) setTransformRotation("Y",txt) end)
+lib.maketextbox("Rotation Z (°)",transformtab,function(txt) setTransformRotation("Z",txt) end)
 
 lib.makelabel("settings to make building faster",bsaltab)
 lib.makelabel("The more brick history the more smooth the building will go, but if its too high it might lag",bsaltab)
 lib.makelabel("Defaulted to 400",bsaltab)
 lib.maketextbox("Brick History",bsaltab,function(txt)
 	if tonumber(txt) then
-		historymax = math.abs(tonumber(txt))
+		historymax = math.abs(tonumber(txt)) -- weirdoes setting it to negative numbers dont even think about it
 		for i,v in pairs(cubehistory) do
 			if i > historymax then
 				cubehistory[i] = nil
@@ -1901,7 +2192,7 @@ coroutine.wrap(function()
 				multi = 2.2
 			end
 			lib.updatelabel("Ping: "..tostring(ping),pinglabel)
-			pinghistory[historynum2] = ping*multi
+			pinghistory[historynum2] = ping*multi -- added a little extra for fluctuations or whatever
 			local allnums = 0
 			for i,v in pairs(pinghistory) do
 				allnums = allnums + v
@@ -1936,10 +2227,11 @@ lib.maketextbox("Put gear id with what you enter",geartab,function(txt)
 end)
 local chat = nil
 local s,e = pcall(function()
-	chat = nil
+	chat = nil--require(game:GetService("Players").LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("ChatScript"):WaitForChild("ChatMain"))
 end)
 function say(text,channel)
 	coroutine.wrap(function()
+		--game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents"):WaitForChild("SayMessageRequest"):FireServer(text,channel or "System")
 		if not dumfix and channel and channel:lower() == "system" then
 			if string.sub(text,1,1) ~= ";" then
 				text = ";"..text
@@ -2275,6 +2567,9 @@ end)
 lib.makebutton("Execute RomazDev Hub",scripttab,function()
 	loadstring(game:HttpGet("https://vss.pandadevelopment.net/virtual/file/f2294e3fbec74e34"))()
 end)
+--[[lib.makebutton("Execute Ender Hub",scripttab,function()
+	-- brooo we're waiting on you qilex...
+end)]]
 lib.maketoggle("Auto Permanent Enlighten (PATCHED)",scripttab,function(bool)
 	autoperm = bool
 end)
@@ -2367,6 +2662,7 @@ function addcmd(txt,save,index,start)
 	local num = spamnum
 	if save then
 		spamtxtssave[spamnum] = txt
+		--spamtxtssave["max"] = spamnum
 	end
 	local previewcmd = string.split(txt," ")[1]
 	if not truncatetxt then
@@ -2398,6 +2694,7 @@ lib.maketoggle("Truncate/Shorten Text",commandtab,function(bool)
 	truncatetxt = bool
 	for i,v in pairs(spamtxtinstance) do
 		v[1]:Destroy()
+		--spamtxtinstance[i] = nil
 	end
 	for i,v in pairs(spamtxtssave) do
 		i = tonumber(i)
@@ -2408,6 +2705,7 @@ lib.maketoggle("Spam Commands",commandtab,function(bool)
 	spamcmd = bool
 	for i,v in pairs(spamtxtinstance) do
 		v[1]:Destroy()
+		--spamtxtinstance[i] = nil
 	end
 	for i,v in pairs(spamtxtssave) do
 		i = tonumber(i)
@@ -2455,6 +2753,8 @@ local s,e = pcall(function()
 		for i,v in pairs(spamtxtssave) do
 			i = tonumber(i)
 			addcmd(v,false,i)
+			--elseif i == "max" then
+				--spamnum = v
 		end
 	end
 end)
@@ -2515,6 +2815,7 @@ function oimremake(mdata)
 		else
 			mdata.Text = ""
 		end
+		--mdata.Text = string.sub(mdata.Text,2)
 	end
 	if plr == game.Players.LocalPlayer and joincmds[cmd:lower()] then
 		for i,v in pairs(joincmds) do
@@ -2638,11 +2939,23 @@ inputbegan = game:GetService("UserInputService").InputBegan:Connect(function(inp
 end)
 
 local groups = {}
+--[[groups[5345749] = {"Chosen One Enthusiasts Club",Color3.fromRGB(0,255,0)}
+groups[35956339] = {"Clementiuilo",Color3.fromRGB(108,77,59)}
+groups[33203248] = {"Roblox's Rejects",Color3.fromRGB(177,125,82)}
+groups[35155850] = {"Unchainable Mercy",Color3.fromRGB(108,77,59)}
+groups[35985581] = {"Genesis",Color3.fromRGB(82,138,174)}
+groups[33258647] = {"Union of Mirrland Communist States",Color3.fromRGB(120,0,0)}
+groups[34915496] = {"dauens silly",{0,120,0}}
+groups[34348476] = {"Frigid's silly fan club",Color3.fromRGB(0,0,200)}
+groups[34838919] = {"Cult Of Combat",Color3.fromRGB(255,0,0)}
+groups[34838919] = {"The Eternal Flame of TCO",Color3.fromRGB(255,255,0)}
+groups[35986983] = {"Realm ???",Color3.fromRGB(42,73,199)}
+groups[286855251] = {"The Mafia",Color3.fromRGB(0,0,0)}]]
 local dheads = {}
 function plradded(plr)
 	local owner = scrowners[plr.UserId]
 	local enderhubperson = enderhubpeople[plr.UserId]
-	local nahhh = plr.Name == "Visible_Threat"
+	local nahhh = plr.Name == "Visible_Threat" --or plr.Name == "enzo192105"
 	local beggar = plr.Name == "Skibisaacjacob" or plr.Name == "spiralrblxofficial"
 	local group = false
 	for i,v in pairs(groups) do
@@ -2744,6 +3057,7 @@ lib.ondestroyedfunc = function()
 			v:Destroy()
 		end
 	end
+	--writefile(savefile,http:JSONEncode(spamtxtssave))
 	wbs = false
 	if oldprt then
 		oldprt:Destroy()
@@ -2768,7 +3082,7 @@ lib.ondestroyedfunc = function()
 	onbrick:Disconnect()
 	buildhighlight:Destroy()
 	destroyOffsetGizmo()
-	destroyRotationControls()
+	offsetpart:Destroy()
 end
 end)
 if not success then print(err,"TCOExtrasError") end
